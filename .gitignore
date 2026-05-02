@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+.env
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / Vue
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Docker
+*.env.local
+
+# Datos sensibles o generados
+backend/uploads/
+*.db
+
+# Excluir CSVs generados por el pipeline pero conservar los de ejemplo
+*.csv
+!ejemplos/*.csv
+
+# macOS / Windows
+.DS_Store
+Thumbs.db

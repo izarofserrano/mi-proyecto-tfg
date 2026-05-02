@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy[asyncio]
+asyncpg
+aiosqlite
+pydantic-settings
+python-multipart
+pandas
+numpy
+holidays
+pytest
+pytest-asyncio
+httpx
+coverage

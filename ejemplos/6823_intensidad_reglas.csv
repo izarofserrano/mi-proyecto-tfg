@@ -1,0 +1,43 @@
+antecedente,consecuente,n_vars,soporte,confianza,lift
+t_H07 AND t_Laborable AND t_Madrugada,v_OutlierAlto,3,0.0146,0.6798,10.7779
+t_H07 AND t_Vie,v_OutlierAlto,2,0.0089,0.5919,9.3842
+t_H03 AND t_Mie,v_OutlierBajo,2,0.0118,0.6442,8.5912
+t_H03 AND t_Lun,v_OutlierBajo,2,0.0118,0.634,8.4539
+t_2024 AND t_H07 AND t_Laborable,v_OutlierAlto,3,0.0246,0.5303,8.4073
+t_H03 AND t_Vie,v_OutlierBajo,2,0.0118,0.5688,7.5847
+t_H02 AND t_Laborable,v_OutlierBajo,2,0.0495,0.5008,6.678
+t_Dom AND t_H08,v_Baja,2,0.0089,0.9643,4.5733
+t_Dom AND t_H07,v_Baja,2,0.0089,0.9554,4.531
+t_H07 AND t_Sab,v_Baja,2,0.0089,0.9205,4.3658
+t_H23,v_Baja,1,0.0624,0.888,4.2116
+t_Dom AND t_H11,v_Media,2,0.0089,0.8142,4.1867
+t_H07 AND t_Laborable,v_MuyAlta,2,0.0445,0.667,3.9677
+t_Dom AND t_H16,v_Media,2,0.0089,0.7283,3.7452
+t_H16 AND t_Sab,v_Media,2,0.0089,0.7235,3.7203
+t_H09 AND t_Sab,v_Media,2,0.0089,0.7038,3.619
+t_H22,v_Baja,1,0.0625,0.7497,3.5557
+t_H21,v_Media,1,0.0626,0.6807,3.5003
+t_H14 AND t_Laborable,v_MuyAlta,2,0.0447,0.5814,3.4584
+t_H11 AND t_Sab,v_Media,2,0.0089,0.6532,3.3588
+t_Ago AND t_Tarde,v_Media,2,0.032,0.6441,3.3122
+t_H08 AND t_Laborable,v_MuyAlta,2,0.0448,0.534,3.1765
+t_H09 AND t_Laborable,v_MuyAlta,2,0.0447,0.5337,3.1748
+t_2025 AND t_H14,v_MuyAlta,2,0.0346,0.5301,3.1531
+t_Madrugada,v_MuyBaja,1,0.3121,0.5947,3.127
+t_2024 AND t_H07,v_MuyAlta,2,0.0345,0.5246,3.1206
+t_Madrugada AND t_Sab,v_Baja,2,0.0604,0.6357,3.0151
+t_H20,v_Media,1,0.0625,0.5659,2.9098
+t_FinSemana AND t_H09,v_Baja,2,0.0179,0.5896,2.7965
+t_H00,v_Baja,1,0.0625,0.5861,2.7797
+t_FinSemana AND t_H12,v_Media,2,0.0179,0.5147,2.6465
+t_H12,v_Alta,1,0.0625,0.6099,2.58
+t_H19,v_Alta,1,0.0624,0.6054,2.561
+t_Ago AND t_Dom,v_Baja,2,0.0177,0.5263,2.4959
+t_Dom AND t_Madrugada,v_Baja,2,0.0604,0.519,2.4613
+t_H16 AND t_Laborable,v_Alta,2,0.0447,0.5615,2.3751
+t_H18,v_Alta,1,0.0624,0.5592,2.3654
+t_H13,v_Alta,1,0.0625,0.5559,2.3515
+t_H17 AND t_Laborable,v_Alta,2,0.0446,0.5475,2.3161
+t_FinSemana AND t_H20,v_Alta,2,0.0207,0.539,2.28
+t_H11,v_Alta,1,0.0626,0.5278,2.2327
+t_2024 AND t_H17,v_Alta,2,0.0348,0.5108,2.1609
