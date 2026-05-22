@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from app.core.nlg import generar_resumen
-from app.core.nlg.verbalize import verbalizar_antecedente
+from app.core.nlg.verbalize import calidad_regla, verbalizar_antecedente
 
 _REGLAS_CSV = os.path.join(
     os.path.dirname(__file__), "..", "..", "ejemplos", "6823_ocupacion_reglas.csv"
@@ -62,6 +62,20 @@ def test_verbalizar_antecedente_horas_consecutivas():
 
 
 # ── generar_resumen con CSV real ───────────────────────────────────────────
+
+@pytest.mark.parametrize("lift,esperado", [
+    (3.0,  "de forma muy marcada"),
+    (2.5,  "de forma notable"),
+    (1.7,  "con cierta consistencia"),
+    (1.2,  "con cierta tendencia"),
+    (5.99, "de forma muy marcada"),  # el código viejo daba "de forma notable"
+])
+def test_calidad_regla_umbrales(lift, esperado):
+    row = pd.Series({"lift": lift})
+    assert calidad_regla(row) == esperado, (
+        f"lift={lift}: esperado {esperado!r}, obtuvo {calidad_regla(row)!r}"
+    )
+
 
 def test_generar_resumen_produce_markdown_valido():
     """generar_resumen sobre las reglas de ejemplo produce Markdown con cabecera,

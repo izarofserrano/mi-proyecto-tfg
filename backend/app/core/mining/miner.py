@@ -21,7 +21,7 @@ class BeamSearchMiner:
         self,
         min_soporte: float = 0.005,
         min_confianza: float = 0.50,
-        min_lift: float = 1.5,
+        min_lift: float = 2.0,  # "Sorprendentes" — umbral por defecto del glosario (lift ≥ 2.0)
         beam_width: int = 10,
         max_vars: int = 3,
         top_por_consecuente: int = 10,

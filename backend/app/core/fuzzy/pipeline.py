@@ -88,7 +88,7 @@ def fuzzify(
         "HORAS":      granularidad_s <= 3600   and cobertura_dias >= 1,
         "MIN_FINOS":  granularidad_s < 60      and cobertura_s >= 3600,
         "MINUTOS":    granularidad_s < 900     and cobertura_s >= 3600,  # estricto: < 900
-        "FESTIVOS":   cobertura_dias >= 1,
+        "FESTIVOS":   granularidad_s <= 86400 and cobertura_dias >= 1,
     }
 
     def _resolver(flag: Optional[bool], clave: str) -> bool:

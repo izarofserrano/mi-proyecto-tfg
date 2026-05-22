@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+_HORAS_POR_FRANJA: dict[str, set[str]] = {
+    "t_Madrugada": {f"t_H{h:02d}" for h in range(0,  7)},
+    "t_Mañana":    {f"t_H{h:02d}" for h in range(7,  14)},
+    "t_Tarde":     {f"t_H{h:02d}" for h in range(14, 21)},
+    "t_Noche":     {f"t_H{h:02d}" for h in range(21, 24)},
+}
+
+_TODAS_HORAS: set[str] = {f"t_H{h:02d}" for h in range(24)}
+
 _MESES_POR_ESTACION: dict[str, set[str]] = {
     "t_Invierno":  {"t_Dic", "t_Ene", "t_Feb"},
     "t_Primavera": {"t_Marz", "t_Abr", "t_May"},
@@ -28,6 +37,9 @@ def _construir_grupos(cols_disponibles) -> list[set[str]]:
         {"t_M00", "t_M15", "t_M30", "t_M45"},
         {"t_Laborable", "t_Sab", "t_Dom"},
         {"t_FinSemana", "t_Lun", "t_Mar", "t_Mie", "t_Jue", "t_Vie"},
+        # Exclusiones cruzadas festivo/laborable
+        {"t_Laborable", "t_Festivo"},
+        {"t_FinSemana", "t_Festivo"},
     ]
     return [grupo & cols for grupo in candidatos if len(grupo & cols) >= 2]
 
@@ -68,5 +80,11 @@ def combinacion_valida(tokens: set[str], grupos_excluyentes: list[set[str]]) -> 
         if estacion in tokens:
             meses_en_regla = tokens & _TODOS_MESES
             if meses_en_regla - meses_validos:
+                return False
+    # Regla 3: hora y franja deben ser compatibles
+    for franja, horas_validas in _HORAS_POR_FRANJA.items():
+        if franja in tokens:
+            horas_en_regla = tokens & _TODAS_HORAS
+            if horas_en_regla and not (horas_en_regla <= horas_validas):
                 return False
     return True

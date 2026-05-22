@@ -20,7 +20,7 @@ class FuzzyConfig:
 
     # Suelo mínimo de muestras en cada rampa difusa
     # Garantiza que la rampa no sea más estrecha que el intervalo entre muestras.
-    n_muestras_rampa: int = 2
+    n_muestras_rampa: int = 3
 
     # Flags de activación de bloques temporales
     # None = automático según granularidad y cobertura del dataset
