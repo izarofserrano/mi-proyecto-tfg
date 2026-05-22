@@ -39,7 +39,17 @@ ETIQUETA_TEMPORAL: dict[str, str] = {
     "t_M45": "el último cuarto de hora (minutos 45–59)",
 }
 
-ETIQUETA_METRICA: dict[str, str] = {
+ETIQUETA_METRICA_COLOQUIAL: dict[str, str] = {
+    "v_MuyBaja":     "muy baja",
+    "v_Baja":        "baja",
+    "v_Media":       "media",
+    "v_Alta":        "alta",
+    "v_MuyAlta":     "muy alta",
+    "v_OutlierBajo": "excepcionalmente baja",
+    "v_OutlierAlto": "excepcionalmente alta",
+}
+
+ETIQUETA_METRICA_TECNICA: dict[str, str] = {
     "v_MuyBaja":     "muy baja",
     "v_Baja":        "baja",
     "v_Media":       "media",

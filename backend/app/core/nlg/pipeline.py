@@ -6,8 +6,8 @@ from typing import Optional
 import pandas as pd
 
 from .labels import (
-    ANIOS, DIAS, ETIQUETA_METRICA, FESTIVOS, FRANJAS, HORAS, MINUTOS,
-    NOMBRE_METRICA, ORDEN_CONSECUENTE,
+    ANIOS, DIAS, ETIQUETA_METRICA_COLOQUIAL, ETIQUETA_METRICA_TECNICA,
+    FESTIVOS, FRANJAS, HORAS, MINUTOS, NOMBRE_METRICA, ORDEN_CONSECUENTE,
 )
 from .verbalize import (
     categoria_dominante, franja_de_tokens, listar_en_español,
@@ -79,13 +79,15 @@ def grupo_a_parrafo(
     nombre_metrica: str,
     consecuente: str,
     min_reglas: int,
+    modo: str = "tecnico",
 ) -> str:
-    desc_v = ETIQUETA_METRICA.get(consecuente, consecuente)
+    etiquetas = ETIQUETA_METRICA_COLOQUIAL if modo == "coloquial" else ETIQUETA_METRICA_TECNICA
+    desc_v = etiquetas.get(consecuente, consecuente)
     filas_ordenadas = sorted(filas, key=lambda r: -r["lift"])
 
     # Caso A: grupo pequeño → frases individuales
     if len(filas_ordenadas) < min_reglas:
-        return "\n".join(regla_a_frase(f, nombre_metrica) for f in filas_ordenadas)
+        return "\n".join(regla_a_frase(f, nombre_metrica, modo=modo) for f in filas_ordenadas)
 
     # Caso B: grupo amplio → párrafo narrativo
     conjuntos = [parsear_antecedente(f["antecedente"]) for f in filas_ordenadas]
@@ -149,6 +151,7 @@ def generar_resumen(
     metrica: str,
     min_reglas_grupo: int = 2,
     output_path: Optional[str] = None,
+    modo: str = "tecnico",
 ) -> str:
     """Genera el resumen completo en Markdown para un sensor y métrica.
 
@@ -223,7 +226,8 @@ def generar_resumen(
         if df_c.empty:
             continue
 
-        desc_v = ETIQUETA_METRICA.get(consecuente, consecuente)
+        etiquetas = ETIQUETA_METRICA_COLOQUIAL if modo == "coloquial" else ETIQUETA_METRICA_TECNICA
+        desc_v = etiquetas.get(consecuente, consecuente)
         n = len(df_c)
         lineas.append(f"### {nombre_metrica.capitalize()} {desc_v}")
         lineas.append(
@@ -234,7 +238,7 @@ def generar_resumen(
         lineas.append("")
 
         for grupo in agrupar_reglas(df_c):
-            lineas.append(grupo_a_parrafo(grupo, nombre_metrica, consecuente, min_reglas_grupo))
+            lineas.append(grupo_a_parrafo(grupo, nombre_metrica, consecuente, min_reglas_grupo, modo=modo))
             lineas.append("")
 
     # Estadísticas globales

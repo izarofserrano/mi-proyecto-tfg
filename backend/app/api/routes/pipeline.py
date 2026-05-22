@@ -38,6 +38,7 @@ async def run_pipeline(
     beam_width: int = Form(10),
     max_vars: int = Form(3),
     tol_horas: float = Form(0.5),
+    modo_verbalizacion: str = Form("tecnico"),
     db: AsyncSession = Depends(get_db),
 ) -> RunPipelineResponse:
     """Lanza el pipeline completo en segundo plano y devuelve un job_id."""
@@ -67,6 +68,7 @@ async def run_pipeline(
         execute_pipeline,
         job_id, upload_path,
         min_lift, min_confianza, min_soporte, beam_width, max_vars, tol_horas,
+        modo_verbalizacion,
     )
 
     return RunPipelineResponse(job_id=job_id)

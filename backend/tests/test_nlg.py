@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from app.core.nlg import generar_resumen
-from app.core.nlg.verbalize import calidad_regla, verbalizar_antecedente
+from app.core.nlg.verbalize import calidad_regla, regla_a_frase, verbalizar_antecedente
 
 _REGLAS_CSV = os.path.join(
     os.path.dirname(__file__), "..", "..", "ejemplos", "6823_ocupacion_reglas.csv"
@@ -75,6 +75,44 @@ def test_calidad_regla_umbrales(lift, esperado):
     assert calidad_regla(row) == esperado, (
         f"lift={lift}: esperado {esperado!r}, obtuvo {calidad_regla(row)!r}"
     )
+
+
+_REGLA_OUTLIER = pd.Series({
+    "antecedente": "t_H07",
+    "consecuente": "v_OutlierBajo",
+    "soporte":     0.05,
+    "confianza":   0.80,
+    "lift":        3.5,
+})
+
+
+def test_regla_a_frase_modo_coloquial():
+    """En modo coloquial el outlier no lleva el sufijo '(outlier inferior)'."""
+    frase = regla_a_frase(_REGLA_OUTLIER, "intensidad del tráfico", modo="coloquial")
+    assert "excepcionalmente baja" in frase
+    assert "(outlier inferior)" not in frase
+
+
+def test_regla_a_frase_modo_tecnico():
+    """En modo técnico el outlier incluye el sufijo '(outlier inferior)'."""
+    frase = regla_a_frase(_REGLA_OUTLIER, "intensidad del tráfico", modo="tecnico")
+    assert "excepcionalmente baja (outlier inferior)" in frase
+
+
+def test_regla_a_frase_modo_invalido():
+    """Un modo desconocido debe lanzar ValueError."""
+    with pytest.raises(ValueError, match="modo debe ser"):
+        regla_a_frase(_REGLA_OUTLIER, "intensidad del tráfico", modo="otro")
+
+
+def test_generar_resumen_modo_se_propaga():
+    """generar_resumen en modo coloquial NO debe contener '(outlier superior)'."""
+    df = pd.read_csv(_REGLAS_CSV)
+    md_col = generar_resumen(df, sensor="6823", metrica="ocupacion", modo="coloquial")
+    md_tec = generar_resumen(df, sensor="6823", metrica="ocupacion", modo="tecnico")
+
+    assert "(outlier" not in md_col, "El modo coloquial no debe contener sufijos de outlier"
+    assert "(outlier" in md_tec,     "El modo técnico debe contener sufijos de outlier"
 
 
 def test_generar_resumen_produce_markdown_valido():

@@ -3,9 +3,9 @@ from __future__ import annotations
 import pandas as pd
 
 from .labels import (
-    ANIOS, DIAS, ESTACIONES, ETIQUETA_METRICA, ETIQUETA_TEMPORAL, FESTIVOS,
-    FRANJAS, HORA_A_FRANJA, HORAS, MINUTOS, MESES, NOMBRE_METRICA,
-    QUINCENAS, TIPO_DIA,
+    ANIOS, DIAS, ESTACIONES, ETIQUETA_METRICA_COLOQUIAL, ETIQUETA_METRICA_TECNICA,
+    ETIQUETA_TEMPORAL, FESTIVOS, FRANJAS, HORA_A_FRANJA, HORAS, MINUTOS, MESES,
+    NOMBRE_METRICA, QUINCENAS, TIPO_DIA,
 )
 
 
@@ -117,12 +117,19 @@ def calidad_regla(row: pd.Series) -> str:
     return "con cierta tendencia"
 
 
-def regla_a_frase(row: pd.Series, nombre_metrica: str) -> str:
-    tokens  = parsear_antecedente(row["antecedente"])
-    cat     = categoria_dominante(tokens)
-    desc_t  = verbalizar_antecedente(tokens)
-    desc_v  = ETIQUETA_METRICA.get(row["consecuente"], row["consecuente"])
-    calidad = calidad_regla(row)
+def regla_a_frase(row: pd.Series, nombre_metrica: str, modo: str = "tecnico") -> str:
+    if modo == "coloquial":
+        etiquetas = ETIQUETA_METRICA_COLOQUIAL
+    elif modo == "tecnico":
+        etiquetas = ETIQUETA_METRICA_TECNICA
+    else:
+        raise ValueError(f"modo debe ser 'coloquial' o 'tecnico', recibido: {modo!r}")
+
+    tokens   = parsear_antecedente(row["antecedente"])
+    cat      = categoria_dominante(tokens)
+    desc_t   = verbalizar_antecedente(tokens)
+    desc_v   = etiquetas.get(row["consecuente"], row["consecuente"])
+    calidad  = calidad_regla(row)
     conf_pct = int(round(row["confianza"] * 100))
     lift_val = f"{row['lift']:.1f}"
 
@@ -139,7 +146,13 @@ def regla_a_frase(row: pd.Series, nombre_metrica: str) -> str:
     }
     prefijo = prefijos.get(cat, "En")
 
-    return (
-        f"{prefijo} {desc_t}, la {nombre_metrica} tiende a ser {desc_v} "
-        f"{calidad} (confianza {conf_pct} %, lift {lift_val})."
-    )
+    if modo == "tecnico":
+        return (
+            f"{prefijo} {desc_t}, la {nombre_metrica} tiende a ser {desc_v} "
+            f"{calidad} (confianza {conf_pct} %, lift {lift_val})."
+        )
+    else:
+        return (
+            f"{prefijo} {desc_t}, la {nombre_metrica} tiende a ser {desc_v} "
+            f"{calidad}."
+        )

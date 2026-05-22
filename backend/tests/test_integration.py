@@ -46,6 +46,17 @@ async def test_run_accepts_custom_mining_params(http_client: AsyncClient):
     assert resp.status_code == 202
 
 
+async def test_pipeline_run_acepta_modo_verbalizacion(http_client: AsyncClient):
+    """POST /run con modo_verbalizacion='coloquial' debe devolver 202."""
+    resp = await http_client.post(
+        "/api/v1/pipeline/run",
+        files={"file": _csv_file()},
+        data={"modo_verbalizacion": "coloquial"},
+    )
+    assert resp.status_code == 202
+    assert "job_id" in resp.json()
+
+
 # ── GET /{job_id}/status ───────────────────────────────────────────────────
 
 async def test_status_returns_valid_response_after_submit(http_client: AsyncClient):

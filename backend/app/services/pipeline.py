@@ -67,9 +67,9 @@ def _run_mining(
     ).fit(fuzzy_df)
 
 
-def _run_nlg(rules_df: pd.DataFrame, sensor_id: str, metrica: str) -> str:
+def _run_nlg(rules_df: pd.DataFrame, sensor_id: str, metrica: str, modo: str = "tecnico") -> str:
     """Runs src03 and returns the Markdown report."""
-    return generar_resumen(rules_df, sensor=sensor_id, metrica=metrica)
+    return generar_resumen(rules_df, sensor=sensor_id, metrica=metrica, modo=modo)
 
 
 # ── Async DB helpers ──────────────────────────────────────────────────────
@@ -151,6 +151,7 @@ async def execute_pipeline(
     beam_width: int = 10,
     max_vars: int = 3,
     tol_horas: float = 0.5,
+    modo_verbalizacion: str = "tecnico",
 ) -> None:
     """Full pipeline for ALL sensors: src00 → src01 → src02 → src03, persists to DB."""
     loop = asyncio.get_running_loop()
@@ -197,7 +198,7 @@ async def execute_pipeline(
                     f"[{i + 1}/{n}] {sensor_id}: generando informe…",
                 )
                 report_md = await loop.run_in_executor(
-                    None, partial(_run_nlg, rules_df, sensor_id, metrica)
+                    None, partial(_run_nlg, rules_df, sensor_id, metrica, modo_verbalizacion)
                 )
 
                 results.append((sensor_id, metrica, rules_df, report_md))

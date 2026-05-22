@@ -42,9 +42,14 @@
         <Transition name="slide">
           <div v-show="showParams" class="params-grid">
             <label class="param-item">
-              <span class="param-label">MIN_LIFT</span>
-              <span class="param-desc">Lift mínimo de las reglas</span>
-              <input v-model.number="params.min_lift" type="number" step="0.1" min="1" />
+              <span class="param-label">LIFT_MINIMO</span>
+              <span class="param-desc" title="Lift ≥ valor seleccionado. Lift = 3 significa que el patrón es 3× más probable que por azar.">Nivel de sorpresa de las reglas</span>
+              <select v-model.number="params.min_lift">
+                <option :value="1.0">Incluir todas</option>
+                <option :value="1.5">Algo sorprendentes</option>
+                <option :value="2.0">Sorprendentes (recomendado)</option>
+                <option :value="3.0">Muy sorprendentes</option>
+              </select>
             </label>
             <label class="param-item">
               <span class="param-label">MIN_CONFIANZA</span>
@@ -70,6 +75,14 @@
               <span class="param-label">TOL_HORAS</span>
               <span class="param-desc">Tolerancia rampa horas (0–1)</span>
               <input v-model.number="params.tol_horas" type="number" step="0.05" min="0" max="1" />
+            </label>
+            <label class="param-item">
+              <span class="param-label">MODO</span>
+              <span class="param-desc" title="Técnico usa terminología precisa; Coloquial usa lenguaje cotidiano para audiencias no expertas.">Modo de verbalización</span>
+              <select v-model="params.modo_verbalizacion">
+                <option value="tecnico">Técnico (recomendado)</option>
+                <option value="coloquial">Coloquial</option>
+              </select>
             </label>
           </div>
         </Transition>
@@ -108,12 +121,13 @@ const loading   = ref(false)
 const error     = ref(null)
 
 const params = reactive({
-  min_lift:      1.5,
-  min_confianza: 0.5,
-  min_soporte:   0.005,
-  beam_width:    10,
-  max_vars:      3,
-  tol_horas:     0.5,
+  min_lift:            2.0,
+  min_confianza:       0.5,
+  min_soporte:         0.005,
+  beam_width:          10,
+  max_vars:            3,
+  tol_horas:           0.5,
+  modo_verbalizacion:  'tecnico',
 })
 
 function onFileChange(e) {
@@ -229,6 +243,16 @@ h1 { font-size: 1.6rem; font-weight: 800; color: #1a1a2e; margin-bottom: .4rem; 
   width: 100%;
 }
 .param-item input:focus { border-color: #2563eb; }
+.param-item select {
+  padding: .4rem .6rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  font-size: .9rem;
+  outline: none;
+  width: 100%;
+  background: #fff;
+}
+.param-item select:focus { border-color: #2563eb; }
 
 /* Transitions */
 .slide-enter-active, .slide-leave-active { transition: opacity .2s, transform .2s; }
