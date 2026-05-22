@@ -35,10 +35,28 @@ CSV reglas       → src03 (NLG)           → informe .md
 
 ### src02 — Beam Search
 - Lee CSV fuzzy, extrae reglas de asociación difusas.
-- Parámetros clave: MIN_SOPORTE, MIN_CONFIANZA, MIN_LIFT, BEAM_WIDTH, MAX_VARS.
-- Filtros: variables constantes, grupos mutuamente excluyentes (dinámicos),
-  jerarquía semántica (dinámico según columnas presentes), combinaciones inválidas.
+- Parámetros (decisiones del usuario, NO calibración automática):
+  - MIN_SOPORTE: umbral de masa mínima (default 0.005)
+  - MIN_CONFIANZA: umbral mínimo (default 0.50)
+  - LIFT_MINIMO: umbral absoluto de sorpresa, seleccionable (1.0/1.5/2.0/3.0)
+    con etiquetas "Incluir todas / Algo sorprendentes / Sorprendentes / Muy sorprendentes"
+  - MAX_PROF: profundidad máxima del antecedente (default 3)
+  - K_BEAM: anchura del haz (default 10)
+  - TOP_POR_CONSECUENTE: tope por consecuente (default 10)
+- El beam poda por confianza, NO por lift ni soporte.
+- El lift hace dos cosas: filtra (umbral absoluto) Y ordena la salida.
+- El soporte solo filtra masa mínima (admisión + aportación marginal),
+  nunca ordena.
 - Salida: CSV con columnas [antecedente, consecuente, soporte, confianza, lift, n_vars].
+
+### src03 — Escala adverbial
+| lift | adverbio |
+|---|---|
+| < 1.5 | "con cierta tendencia" |
+| 1.5 ≤ lift < 2.0 | "con cierta consistencia" |
+| 2.0 ≤ lift < 3.0 | "de forma notable" |
+| lift ≥ 3.0 | "de forma muy marcada" |
+Estos umbrales son fijos y coherentes con los del selector de src02.
 
 ### src03 — NLG
 - Lee CSV de reglas, genera informe Markdown estructurado.
@@ -93,6 +111,11 @@ CSV reglas       → src03 (NLG)           → informe .md
 3. rampa_s() garantiza que siempre hay muestras en las rampas difusas.
 4. GEN_MINUTOS se activa solo si GRANULARIDAD_S < 900 (estricto).
 5. t_Festivo usa la librería `holidays` con PAIS y SUBDIV configurables.
+6. Los umbrales de lift, soporte y confianza son SIEMPRE decisiones
+   del usuario expuestas como parámetros, nunca calibradas sobre los datos.
+7. NO existe src05 ni calibración automática de umbrales. Si encuentras
+   referencias a calidad_umbrales.json o construir_calidad calibrada por
+   cuantiles, son código muerto: elimínalas.
 
 ## Equivalencias Spring Boot → FastAPI (para el desarrollador)
 - @RestController     → APIRouter
@@ -136,20 +159,39 @@ CSV reglas       → src03 (NLG)           → informe .md
 - **Docker** — `backend/Dockerfile`, `frontend/Dockerfile` (multi-stage → nginx), `docker-compose.yml` (postgres + backend + frontend + volumen uploads, healthcheck pg_isready, `API_KEY` env var).
 - **Documentación** — `README.md` completo en la raíz.
 
-### Tests totales: 38/38 ✓
+### Tests totales: 50/50 ✓
 | Suite | Tests |
 |---|---|
 | test_preprocessing.py | 3 |
-| test_fuzzy.py | 3 |
+| test_fuzzy.py | 5 |
 | test_mining.py | 4 |
-| test_nlg.py | 14 |
-| test_integration.py | 14 |
+| test_nlg.py | 19 |
+| test_integration.py | 19 |
 
 ### Próximos pasos sugeridos
 - Añadir Alembic para migraciones de base de datos (actualmente `create_all` en lifespan).
 - Tests E2E completos: upload de CSV real + esperar `status=done` + verificar reglas y report.
 - Soporte para cancelar/eliminar un job en curso.
 - Rate limiting en los endpoints (p. ej. `slowapi`).
+- Regenerar ejemplos/6823_*.csv y *.md con la lógica v4 (pendiente tras PRs 1-4).
+- Renombrar `min_lift` en `beam_search.py` (parámetro interno del algoritmo, PR aparte).
 
 ### Bloqueantes
 - Ninguno. El stack arranca localmente con `uvicorn` + PostgreSQL. Tests: `pytest tests/ -q`.
+
+**Sesión 2026-05-22: PRs 1-4 completados**
+- **PR1** (`fix/core-bugs-vs-notebook-v4`): 4 bugs core/ alineados con notebook v4.
+  Escala adverbial lift corregida (6/4/3 → 3.0/2.0/1.5), prefijo v_ en filtrar_constantes,
+  trapecio Ruspini en valores absolutos, guarda max_v en breakpoints.
+- **PR2** (`fix/core-bugs-vs-notebook-v4`): 5 cambios de lógica mining/NLG.
+  Exclusiones festivo/laborable, validación hora-dentro-de-franja, n_muestras_rampa=3,
+  lift_minimo default=2.0, FESTIVOS condicionado a granularidad≤86400s.
+  +3 tests de regresión para PR1.
+- **PR3** (`feat/nlg-dual-mode-coloquial-tecnico`): Modo coloquial/técnico en NLG.
+  ETIQUETA_METRICA_COLOQUIAL + ETIQUETA_METRICA_TECNICA (del notebook src03 v4),
+  parámetro modo propagado hasta la API, selector de sorpresa y modo en frontend.
+  +5 tests.
+- **PR4** (`refactor/rename-params-canonical-v4`): Renombrado cosmético de parámetros.
+  min_lift→lift_minimo, beam_width→k_beam, max_vars→max_prof en API/servicios/miner/frontend.
+  Sin cambios de lógica. 50/50 tests.
+Fuentes canónicas: notebooks/ (v4) y glosario-difumad.md (raíz).
