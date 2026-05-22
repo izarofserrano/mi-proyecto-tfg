@@ -21,16 +21,16 @@ class BeamSearchMiner:
         self,
         min_soporte: float = 0.005,
         min_confianza: float = 0.50,
-        min_lift: float = 2.0,  # "Sorprendentes" — umbral por defecto del glosario (lift ≥ 2.0)
-        beam_width: int = 10,
-        max_vars: int = 3,
+        lift_minimo: float = 2.0,  # "Sorprendentes" — umbral por defecto del glosario (lift ≥ 2.0)
+        k_beam: int = 10,
+        max_prof: int = 3,
         top_por_consecuente: int = 10,
     ) -> None:
         self.min_soporte = min_soporte
         self.min_confianza = min_confianza
-        self.min_lift = min_lift
-        self.beam_width = beam_width
-        self.max_vars = max_vars
+        self.lift_minimo = lift_minimo
+        self.k_beam = k_beam
+        self.max_prof = max_prof
         self.top_por_consecuente = top_por_consecuente
 
     def fit(
@@ -67,9 +67,9 @@ class BeamSearchMiner:
                 consecuente=consecuente,
                 min_soporte=self.min_soporte,
                 min_confianza=self.min_confianza,
-                min_lift=self.min_lift,
-                max_profundidad=self.max_vars,
-                k_beam=self.beam_width,
+                min_lift=self.lift_minimo,
+                max_profundidad=self.max_prof,
+                k_beam=self.k_beam,
                 grupos_excluyentes=grupos,
             )
             if not df_r.empty:

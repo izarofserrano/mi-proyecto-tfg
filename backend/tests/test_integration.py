@@ -41,7 +41,7 @@ async def test_run_accepts_custom_mining_params(http_client: AsyncClient):
     resp = await http_client.post(
         "/api/v1/pipeline/run",
         files={"file": _csv_file()},
-        data={"min_lift": "2.0", "beam_width": "5", "max_vars": "2"},
+        data={"lift_minimo": "2.0", "k_beam": "5", "max_prof": "2"},
     )
     assert resp.status_code == 202
 

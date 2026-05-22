@@ -44,7 +44,7 @@
             <label class="param-item">
               <span class="param-label">LIFT_MINIMO</span>
               <span class="param-desc" title="Lift ≥ valor seleccionado. Lift = 3 significa que el patrón es 3× más probable que por azar.">Nivel de sorpresa de las reglas</span>
-              <select v-model.number="params.min_lift">
+              <select v-model.number="params.lift_minimo">
                 <option :value="1.0">Incluir todas</option>
                 <option :value="1.5">Algo sorprendentes</option>
                 <option :value="2.0">Sorprendentes (recomendado)</option>
@@ -64,12 +64,12 @@
             <label class="param-item">
               <span class="param-label">BEAM_WIDTH</span>
               <span class="param-desc">Anchura del beam search</span>
-              <input v-model.number="params.beam_width" type="number" step="1" min="1" />
+              <input v-model.number="params.k_beam" type="number" step="1" min="1" />
             </label>
             <label class="param-item">
               <span class="param-label">MAX_VARS</span>
               <span class="param-desc">Profundidad máxima del beam</span>
-              <input v-model.number="params.max_vars" type="number" step="1" min="1" max="5" />
+              <input v-model.number="params.max_prof" type="number" step="1" min="1" max="5" />
             </label>
             <label class="param-item">
               <span class="param-label">TOL_HORAS</span>
@@ -121,11 +121,11 @@ const loading   = ref(false)
 const error     = ref(null)
 
 const params = reactive({
-  min_lift:            2.0,
+  lift_minimo:         2.0,
   min_confianza:       0.5,
   min_soporte:         0.005,
-  beam_width:          10,
-  max_vars:            3,
+  k_beam:              10,
+  max_prof:            3,
   tol_horas:           0.5,
   modo_verbalizacion:  'tecnico',
 })

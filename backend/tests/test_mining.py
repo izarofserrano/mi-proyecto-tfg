@@ -17,9 +17,9 @@ def test_miner_devuelve_reglas_con_lift_mayor_1():
     miner = BeamSearchMiner(
         min_soporte=0.005,
         min_confianza=0.50,
-        min_lift=1.5,
-        beam_width=10,
-        max_vars=3,
+        lift_minimo=1.5,
+        k_beam=10,
+        max_prof=3,
     )
     resultado = miner.fit(df)
     assert not resultado.empty, "No se encontraron reglas"

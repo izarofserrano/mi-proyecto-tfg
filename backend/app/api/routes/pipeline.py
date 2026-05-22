@@ -32,11 +32,11 @@ router = APIRouter()
 async def run_pipeline(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(..., description="CSV del sensor (raw o ya dividido)"),
-    min_lift: float = Form(1.5),
+    lift_minimo: float = Form(1.5),
     min_confianza: float = Form(0.5),
     min_soporte: float = Form(0.005),
-    beam_width: int = Form(10),
-    max_vars: int = Form(3),
+    k_beam: int = Form(10),
+    max_prof: int = Form(3),
     tol_horas: float = Form(0.5),
     modo_verbalizacion: str = Form("tecnico"),
     db: AsyncSession = Depends(get_db),
@@ -67,7 +67,7 @@ async def run_pipeline(
     background_tasks.add_task(
         execute_pipeline,
         job_id, upload_path,
-        min_lift, min_confianza, min_soporte, beam_width, max_vars, tol_horas,
+        lift_minimo, min_confianza, min_soporte, k_beam, max_prof, tol_horas,
         modo_verbalizacion,
     )
 

@@ -51,19 +51,19 @@ def _run_fuzzify(sensor_path: str, tol_horas: float = 0.5) -> tuple[pd.DataFrame
 
 def _run_mining(
     fuzzy_df: pd.DataFrame,
-    min_lift: float = 1.5,
+    lift_minimo: float = 1.5,
     min_confianza: float = 0.5,
     min_soporte: float = 0.005,
-    beam_width: int = 10,
-    max_vars: int = 3,
+    k_beam: int = 10,
+    max_prof: int = 3,
 ) -> pd.DataFrame:
     """Runs src02 and returns rules DataFrame."""
     return BeamSearchMiner(
-        min_lift=min_lift,
+        lift_minimo=lift_minimo,
         min_confianza=min_confianza,
         min_soporte=min_soporte,
-        beam_width=beam_width,
-        max_vars=max_vars,
+        k_beam=k_beam,
+        max_prof=max_prof,
     ).fit(fuzzy_df)
 
 
@@ -145,11 +145,11 @@ def _cleanup_dir(dir_path: str | None) -> None:
 async def execute_pipeline(
     job_id: uuid.UUID,
     upload_path: str,
-    min_lift: float = 1.5,
+    lift_minimo: float = 1.5,
     min_confianza: float = 0.5,
     min_soporte: float = 0.005,
-    beam_width: int = 10,
-    max_vars: int = 3,
+    k_beam: int = 10,
+    max_prof: int = 3,
     tol_horas: float = 0.5,
     modo_verbalizacion: str = "tecnico",
 ) -> None:
@@ -188,8 +188,8 @@ async def execute_pipeline(
                 )
                 rules_df = await loop.run_in_executor(
                     None,
-                    partial(_run_mining, fuzzy_df, min_lift, min_confianza,
-                            min_soporte, beam_width, max_vars),
+                    partial(_run_mining, fuzzy_df, lift_minimo, min_confianza,
+                            min_soporte, k_beam, max_prof),
                 )
 
                 await _set_status(
