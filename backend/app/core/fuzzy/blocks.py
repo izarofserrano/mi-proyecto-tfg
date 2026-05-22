@@ -349,7 +349,8 @@ def _calcular_breakpoints_logicos(min_v: float, max_v: float) -> list[float]:
     if not breakpoints or breakpoints[0] > min_v:
         breakpoints.insert(0, min_v)
     if breakpoints[-1] < max_v:
-        breakpoints.append(max_v)
+        if (max_v - breakpoints[-1]) > escalon * 0.3:
+            breakpoints.append(max_v)
 
     return breakpoints
 
@@ -393,26 +394,36 @@ def generar_metrica(ctx: _FuzzyContext) -> None:
     )
 
     # Valores absolutos con breakpoints lógicos
-    tol_abs = cfg.tol(cfg.tol_absolutas)
     breakpoints = _calcular_breakpoints_logicos(min_val, max_val)
 
     for i, bp in enumerate(breakpoints):
-        rampa_izq = (breakpoints[1] - bp) * tol_abs if i == 0 else (bp - breakpoints[i - 1]) * tol_abs
-        rampa_der = (bp - breakpoints[i - 1]) * tol_abs if i == len(breakpoints) - 1 else (breakpoints[i + 1] - bp) * tol_abs
+        if i == 0:
+            rampa_izq = breakpoints[1] - bp
+        else:
+            rampa_izq = bp - breakpoints[i - 1]
+
+        if i == len(breakpoints) - 1:
+            rampa_der = bp - breakpoints[i - 1]
+        else:
+            rampa_der = breakpoints[i + 1] - bp
+
+        ancho_nucleo = min(rampa_izq, rampa_der) * 0.3
+        a = bp - rampa_izq
+        b = bp - ancho_nucleo / 2
+        c = bp + ancho_nucleo / 2
+        d = bp + rampa_der
+
         nombre_bp = str(round(bp, 4)).replace(".", "_").replace("-", "neg")
-        df[f"v_abs_{nombre_bp}"] = trapecio(df[var], bp - rampa_izq, bp, bp, bp + rampa_der)
+        df[f"v_abs_{nombre_bp}"] = trapecio(df[var], a, b, c, d)
 
 
 # ── Utilidad ──────────────────────────────────────────────────────────────────
 
 def filtrar_constantes(
     df: pd.DataFrame,
-    prefijos: tuple[str, ...] = ("t_", "m_"),
+    prefijos: tuple[str, ...] = ("t_", "v_"),
 ) -> pd.DataFrame:
-    """Elimina columnas difusas constantes (todo 0 o todo 1).
-
-    Prefijos por defecto idénticos al notebook: ('t_', 'm_').
-    """
+    """Elimina columnas difusas constantes (todo 0 o todo 1)."""
     cols_difusas = [c for c in df.columns if any(c.startswith(p) for p in prefijos)]
     cols_eliminar = [c for c in cols_difusas if df[c].nunique() <= 1]
     return df.drop(columns=cols_eliminar)

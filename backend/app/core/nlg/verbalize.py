@@ -111,9 +111,9 @@ def verbalizar_antecedente(tokens: set[str]) -> str:
 
 def calidad_regla(row: pd.Series) -> str:
     lift = row["lift"]
-    if lift >= 6: return "de forma muy marcada"
-    if lift >= 4: return "de forma notable"
-    if lift >= 3: return "con cierta consistencia"
+    if lift >= 3.0: return "de forma muy marcada"
+    if lift >= 2.0: return "de forma notable"
+    if lift >= 1.5: return "con cierta consistencia"
     return "con cierta tendencia"
 
 
