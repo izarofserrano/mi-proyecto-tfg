@@ -32,6 +32,15 @@ CSV reglas       → src03 (NLG)           → informe .md
 - N_MUESTRAS_RAMPA=2 por defecto.
 - Detección automática de VAR_METRICA por heurística estadística.
 - Festivos: librería `holidays`, configurable por país/subdivisión.
+- Detección automática de VAR_TIEMPO: _detectar_var_tiempo() con 4
+  estrategias (datetime directo, par fecha+hora, unix timestamp,
+  fallback). Portada del notebook src01 celda 4.
+- LLM fallback para VAR_METRICA: _llamar_llm(), _detectar_metrica_via_llm()
+  portadas del notebook src01 celdas 2-3. Proveedores: gemini, anthropic,
+  openai, ninguno. Configurable via settings (usar_llm_fallback,
+  proveedor_llm, llm_api_key).
+- El backend ya NO hardcodea var_tiempo="fecha". Cualquier CSV con
+  columna temporal con cualquier nombre funciona sin renombrar.
 
 ### src02 — Beam Search
 - Lee CSV fuzzy, extrae reglas de asociación difusas.
@@ -65,6 +74,15 @@ Estos umbrales son fijos y coherentes con los del selector de src02.
 - Soporta: horas, franjas, días, laborables, meses, estaciones, quincenas,
   años, minutos (cuartos), festivos.
 - Informe dividido en secciones por franja horaria y tipo de día.
+
+### src04 — Informe global (PENDIENTE — implementar mañana)
+- Lee los CSVs de reglas generados por src02 para múltiples sensores.
+- Funciones a portar del notebook src04_informe_global__1_.ipynb:
+  cargar_reglas_todos(), hora_mas_frecuente(), dia_mas_frecuente(),
+  patrones_compartidos(), detectar_atipicos(), parrafo_coloquial_global(),
+  construir_informe_global().
+- Endpoint: GET /api/v1/pipeline/{job_id}/global-report
+- Módulo: backend/app/core/global_report/global_report.py
 
 ## Stack tecnológico objetivo
 - Backend: FastAPI (Python 3.11+)
@@ -111,11 +129,15 @@ Estos umbrales son fijos y coherentes con los del selector de src02.
 3. rampa_s() garantiza que siempre hay muestras en las rampas difusas.
 4. GEN_MINUTOS se activa solo si GRANULARIDAD_S < 900 (estricto).
 5. t_Festivo usa la librería `holidays` con PAIS y SUBDIV configurables.
-6. Los umbrales de lift, soporte y confianza son SIEMPRE decisiones
-   del usuario expuestas como parámetros, nunca calibradas sobre los datos.
-7. NO existe src05 ni calibración automática de umbrales. Si encuentras
-   referencias a calidad_umbrales.json o construir_calidad calibrada por
-   cuantiles, son código muerto: elimínalas.
+6. VAR_TIEMPO se detecta automáticamente con 4 estrategias. NO hardcodear
+   "fecha". Ver _detectar_var_tiempo() en heuristic.py.
+7. LIFT_MINIMO es un selector de sorpresa con niveles en lift ABSOLUTO
+   (1.0/1.5/2.0/3.0). No usar percentiles. El valor es estable entre
+   datasets.
+8. construir_calidad() usa umbrales fijos (1.5/2.0/3.0) coherentes con
+   el selector de src02. No calibrar sobre el pool de reglas.
+9. src05 (calibración automática de umbrales) está DESCARTADO del pipeline.
+   No implementar ni referenciar.
 
 ## Equivalencias Spring Boot → FastAPI (para el desarrollador)
 - @RestController     → APIRouter
@@ -145,53 +167,45 @@ Estos umbrales son fijos y coherentes con los del selector de src02.
 
 
 ## Estado actual (actualizar al final de cada sesión)
-**Última sesión: 2026-05-02**
+**Última sesión: 2026-05-23**
 
 ### Completado ✓
-- **src00** — `backend/app/core/preprocessing/splitter.py`: `split_by_sensor()`, `detect_sensors()`. Tests: 3/3.
-- **src01** — `backend/app/core/fuzzy/`: `FuzzyConfig`, `trapecio()`, `rampa_s()`, `_heuristica()`, todos los bloques `generar_*`, `fuzzify()`. Tests: 3/3.
-- **src02** — `backend/app/core/mining/`: `BeamSearchMiner.fit()`, métricas difusas, `_construir_grupos()` dinámico, `_construir_jerarquia()` dinámica, 3 filtros de post-procesado. Tests: 4/4.
-- **src03** — `backend/app/core/nlg/`: `ETIQUETA_TEMPORAL` completo (años 2020-2030, festivos, minutos), `verbalizar_antecedente()`, `generar_resumen()`. Tests: 14/14.
-- **API REST** — `backend/app/api/routes/pipeline.py`: 4 endpoints (`POST /run`, `GET /status`, `GET /report`, `GET /rules?sensor_id=`). Modelos SQLAlchemy async (`Job`, `Rule`). BackgroundTask con `run_in_executor` para no bloquear el event loop.
-- **Auth** — `backend/app/api/deps.py`: `verify_api_key` con header `X-API-Key`. Desactivada si `API_KEY=""` (desarrollo). Aplicada a todos los endpoints vía `dependencies=[]` en el router.
-- **Multi-sensor** — `backend/app/services/pipeline.py`: `_get_all_sensor_paths()` + loop sobre todos los sensores del CSV. Reglas etiquetadas con `sensor_id`. Informes combinados. Progreso proporcional al número de sensores.
-- **Frontend** — `frontend/src/`: `UploadView` (drag & drop + parámetros avanzados), `StatusView` (polling 2 s + barra de progreso), `ReportView` (Markdown con marked.js + tabla reglas ordenable + descarga). Pinia + Vue Router.
-- **Docker** — `backend/Dockerfile`, `frontend/Dockerfile` (multi-stage → nginx), `docker-compose.yml` (postgres + backend + frontend + volumen uploads, healthcheck pg_isready, `API_KEY` env var).
-- **Documentación** — `README.md` completo en la raíz.
+- **src00** — splitter.py: split_by_sensor(), detect_sensors(). Tests: 3/3.
+- **src01** — fuzzy/: FuzzyConfig, trapecio(), rampa_s(), _heuristica(),
+  _detectar_var_tiempo() (4 estrategias), _llamar_llm(), 
+  _detectar_metrica_via_llm(), todos los bloques generar_*. Tests: 9/9.
+- **src02** — mining/: BeamSearchMiner.fit(), métricas difusas,
+  _construir_grupos() dinámico, _construir_jerarquia() dinámica,
+  validación hora+franja, 3 filtros post-procesado. Tests: 4/4.
+- **src03** — nlg/: ETIQUETA_METRICA_COLOQUIAL + ETIQUETA_METRICA_TECNICA,
+  verbalizar_antecedente(), generar_resumen(), modo coloquial/técnico.
+  Tests: 19/19.
+- **API REST** — 4 endpoints (POST /run, GET /status, GET /report,
+  GET /rules). Modelos SQLAlchemy async (Job, Rule).
+- **Frontend** — UploadView con selector de sorpresa (lift absoluto) y
+  selector de modo (coloquial/técnico). StatusView, ReportView.
+- **Docker** — docker-compose.yml (postgres + backend + frontend).
+  nginx.conf con client_max_body_size 50M pendiente de fix.
+- **Auditoría** — 97 elementos auditados, 0 código muerto, 100%
+  justificado por notebooks v4.
 
-### Tests totales: 50/50 ✓
+### Tests totales: 54/54 ✓
 | Suite | Tests |
 |---|---|
 | test_preprocessing.py | 3 |
-| test_fuzzy.py | 5 |
+| test_fuzzy.py | 9 |
 | test_mining.py | 4 |
 | test_nlg.py | 19 |
-| test_integration.py | 19 |
+| test_integration.py | 15 |
+| test_global_report.py | 0 (pendiente src04) |
 
-### Próximos pasos sugeridos
-- Añadir Alembic para migraciones de base de datos (actualmente `create_all` en lifespan).
-- Tests E2E completos: upload de CSV real + esperar `status=done` + verificar reglas y report.
-- Soporte para cancelar/eliminar un job en curso.
-- Rate limiting en los endpoints (p. ej. `slowapi`).
-- Regenerar ejemplos/6823_*.csv y *.md con la lógica v4 (pendiente tras PRs 1-4).
-- Renombrar `min_lift` en `beam_search.py` (parámetro interno del algoritmo, PR aparte).
+### Pendiente
+- src04: informe global cross-sensor (implementar mañana, ver sección arriba)
+- Renombrar proyecto a Fuzhify (después de src04)
+- nginx.conf: arreglar client_max_body_size (caracteres BOM/CRLF)
+- README: actualizar al final cuando todo esté completo
+- Memoria del TFG: empezar tras cerrar src04
 
 ### Bloqueantes
-- Ninguno. El stack arranca localmente con `uvicorn` + PostgreSQL. Tests: `pytest tests/ -q`.
-
-**Sesión 2026-05-22: PRs 1-4 completados**
-- **PR1** (`fix/core-bugs-vs-notebook-v4`): 4 bugs core/ alineados con notebook v4.
-  Escala adverbial lift corregida (6/4/3 → 3.0/2.0/1.5), prefijo v_ en filtrar_constantes,
-  trapecio Ruspini en valores absolutos, guarda max_v en breakpoints.
-- **PR2** (`fix/core-bugs-vs-notebook-v4`): 5 cambios de lógica mining/NLG.
-  Exclusiones festivo/laborable, validación hora-dentro-de-franja, n_muestras_rampa=3,
-  lift_minimo default=2.0, FESTIVOS condicionado a granularidad≤86400s.
-  +3 tests de regresión para PR1.
-- **PR3** (`feat/nlg-dual-mode-coloquial-tecnico`): Modo coloquial/técnico en NLG.
-  ETIQUETA_METRICA_COLOQUIAL + ETIQUETA_METRICA_TECNICA (del notebook src03 v4),
-  parámetro modo propagado hasta la API, selector de sorpresa y modo en frontend.
-  +5 tests.
-- **PR4** (`refactor/rename-params-canonical-v4`): Renombrado cosmético de parámetros.
-  min_lift→lift_minimo, beam_width→k_beam, max_vars→max_prof en API/servicios/miner/frontend.
-  Sin cambios de lógica. 50/50 tests.
-Fuentes canónicas: notebooks/ (v4) y glosario-difumad.md (raíz).
+- Ninguno. El stack arranca con docker compose up.
+  Frontend en http://localhost, API en http://localhost:8000/docs.
