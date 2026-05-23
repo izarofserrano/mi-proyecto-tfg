@@ -50,3 +50,11 @@ class RulesResponse(BaseModel):
     page: int
     page_size: int
     rules: list[RuleItem]
+
+
+class GlobalReportResponse(BaseModel):
+    job_id: uuid.UUID
+    status: str
+    global_report_md: str
+    n_sources: int
+    total_rules: int

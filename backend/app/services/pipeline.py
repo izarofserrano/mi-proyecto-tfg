@@ -207,6 +207,12 @@ async def execute_pipeline(
                     None, partial(_run_nlg, rules_df, sensor_id, metrica, modo_verbalizacion)
                 )
 
+                # Guardar CSVs en disco para src04 (informe global)
+                fuzzy_path = Path(work_dir) / f"{sensor_id}_{metrica}_fuzzy.csv"
+                rules_path = Path(work_dir) / f"{sensor_id}_{metrica}_reglas.csv"
+                await loop.run_in_executor(None, fuzzy_df.to_csv, str(fuzzy_path), False)
+                await loop.run_in_executor(None, rules_df.to_csv, str(rules_path), False)
+
                 results.append((sensor_id, metrica, rules_df, report_md))
 
             await _set_status(db, job_id, "running", 92, "Guardando resultados…")
@@ -240,5 +246,6 @@ async def execute_pipeline(
         except Exception as exc:
             await _set_error(db, job_id, str(exc))
 
-        finally:
-            _cleanup_dir(work_dir)
+        # NOTE: No cleanup para que src04 pueda leer los CSVs guardados
+        # finally:
+        #     _cleanup_dir(work_dir)

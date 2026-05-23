@@ -16,12 +16,14 @@ from app.core.config import settings
 from app.models.job import Job
 from app.models.rule import Rule
 from app.schemas.pipeline import (
+    GlobalReportResponse,
     JobStatusResponse,
     ReportResponse,
     RulesResponse,
     RunPipelineResponse,
 )
 from app.services.pipeline import execute_pipeline
+from app.core.global_report import generar_informe_global
 
 router = APIRouter()
 
@@ -154,6 +156,75 @@ async def get_rules(
         page=page,
         page_size=page_size,
         rules=rules,
+    )
+
+
+# ── GET /{job_id}/global-report ────────────────────────────────────────────
+
+@router.get("/{job_id}/global-report", response_model=GlobalReportResponse)
+async def get_global_report(
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> GlobalReportResponse:
+    """Genera informe global comparativo cross-sensor (src04)."""
+    job = await _get_job_or_404(db, job_id)
+
+    if job.status != "done":
+        raise HTTPException(
+            status_code=400,
+            detail="Job no completado. El informe global solo está disponible para jobs completados."
+        )
+
+    # Directorio de datos del job
+    upload_dir = Path(settings.upload_dir) / str(job_id)
+    dir_datos = str(upload_dir)
+
+    if not upload_dir.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Directorio de datos del job no encontrado: {dir_datos}"
+        )
+
+    # Detectar sensores y métricas a partir de los CSVs de reglas disponibles
+    import glob
+    import re
+    reglas_csvs = glob.glob(str(upload_dir / "*_reglas.csv"))
+
+    if not reglas_csvs:
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontraron CSVs de reglas. El pipeline debe completarse primero."
+        )
+
+    # Extraer (sensor, metrica) de los nombres de archivo: {sensor}_{metrica}_reglas.csv
+    sensores_metricas = set()
+    for csv_path in reglas_csvs:
+        match = re.match(r"(.+)_(.+)_reglas\.csv$", Path(csv_path).name)
+        if match:
+            sensores_metricas.add((match.group(1), match.group(2)))
+
+    sensores = sorted(set(s for s, _ in sensores_metricas))
+    metricas = sorted(set(m for _, m in sensores_metricas))
+
+    # Nombre del conjunto: usar sensor_id del job o "Dataset"
+    nombre_conjunto = job.sensor_id or "Dataset"
+    nombre_metrica_global = job.metrica or (metricas[0] if metricas else "métrica")
+
+    # Generar el informe global
+    resultado = generar_informe_global(
+        sensores=sensores,
+        metricas=metricas,
+        dir_datos=dir_datos,
+        nombre_conjunto=nombre_conjunto,
+        nombre_metrica_global=nombre_metrica_global,
+    )
+
+    return GlobalReportResponse(
+        job_id=job.id,
+        status=job.status,
+        global_report_md=resultado["informe_md"],
+        n_sources=resultado["n_sources"],
+        total_rules=resultado["total_rules"],
     )
 
 
