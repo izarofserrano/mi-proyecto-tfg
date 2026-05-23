@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import update
 
-from app.core.fuzzy.heuristic import detectar_var_metrica
+from app.core.fuzzy.heuristic import _detectar_var_tiempo, detectar_var_metrica
 from app.core.fuzzy.pipeline import fuzzify
 from app.core.mining.miner import BeamSearchMiner
 from app.core.nlg.pipeline import generar_resumen
@@ -42,10 +42,16 @@ def _run_fuzzify(sensor_path: str, tol_horas: float = 0.5) -> tuple[pd.DataFrame
     """Runs src01 and returns (fuzzy_df, metrica_col_name)."""
     from app.core.fuzzy.config import FuzzyConfig
     df_raw = pd.read_csv(sensor_path)
-    df_raw["fecha"] = pd.to_datetime(df_raw["fecha"])
-    metrica = detectar_var_metrica(df_raw, "fecha")
+
+    # Detectar automáticamente la columna temporal (en vez de hardcodear "fecha")
+    var_tiempo, df_raw = _detectar_var_tiempo(df_raw)
+    if var_tiempo is None:
+        raise ValueError("No se detectó columna temporal en el CSV. Especifica manualmente.")
+
+    df_raw[var_tiempo] = pd.to_datetime(df_raw[var_tiempo])
+    metrica = detectar_var_metrica(df_raw, var_tiempo)
     cfg = FuzzyConfig(tol_horas=tol_horas)
-    fuzzy_df = fuzzify(sensor_path, config=cfg)
+    fuzzy_df = fuzzify(sensor_path, var_tiempo=var_tiempo, config=cfg)
     return fuzzy_df, metrica
 
 

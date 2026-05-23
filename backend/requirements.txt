@@ -12,3 +12,8 @@ pytest
 pytest-asyncio
 httpx
 coverage
+requests  # para LLM fallback (Gemini)
+
+# LLM fallback — opcional, solo si usar_llm_fallback=True
+# anthropic  # descomentar si PROVEEDOR_LLM="anthropic"
+# openai     # descomentar si PROVEEDOR_LLM="openai"

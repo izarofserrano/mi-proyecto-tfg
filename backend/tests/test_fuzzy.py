@@ -93,3 +93,66 @@ def test_heuristica_detecta_intensidad_como_clara():
     assert "intensidad" in claras, f"intensidad no detectada como CLARA. info={info}"
     assert "utm_x" not in claras
     assert "latitud" not in claras
+
+
+def test_detectar_var_tiempo_date():
+    """Columna 'date' (inglés) → devuelve 'date'."""
+    from app.core.fuzzy.heuristic import _detectar_var_tiempo
+
+    # Necesita variabilidad tanto en fecha como en hora
+    df = pd.DataFrame({
+        "date": ["2024-01-01 10:00", "2024-01-01 11:00", "2024-01-02 12:00", "2024-01-03 14:00"],
+        "value": [10, 20, 30, 40],
+    })
+
+    var_tiempo, df_out = _detectar_var_tiempo(df)
+
+    assert var_tiempo == "date", f"Esperaba 'date', obtuvo {var_tiempo!r}"
+    assert "date" in df_out.columns
+
+
+def test_detectar_var_tiempo_fecha():
+    """Columna 'fecha' (español) → devuelve 'fecha'."""
+    from app.core.fuzzy.heuristic import _detectar_var_tiempo
+
+    # Necesita variabilidad tanto en fecha como en hora
+    df = pd.DataFrame({
+        "fecha": ["2024-01-01 10:00", "2024-01-01 11:00", "2024-01-02 10:00", "2024-01-03 15:00"],
+        "intensidad": [10, 20, 30, 40],
+    })
+
+    var_tiempo, df_out = _detectar_var_tiempo(df)
+
+    assert var_tiempo == "fecha", f"Esperaba 'fecha', obtuvo {var_tiempo!r}"
+    assert "fecha" in df_out.columns
+
+
+def test_detectar_var_tiempo_par_fecha_hora():
+    """Columnas 'date'+'time' separadas → crea '_datetime'."""
+    from app.core.fuzzy.heuristic import _detectar_var_tiempo
+
+    df = pd.DataFrame({
+        "date": ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04"],
+        "time": ["10:00", "11:00", "12:00", "13:00"],
+        "value": [10, 20, 30, 40],
+    })
+
+    var_tiempo, df_out = _detectar_var_tiempo(df)
+
+    assert var_tiempo == "_datetime", f"Esperaba '_datetime', obtuvo {var_tiempo!r}"
+    assert "_datetime" in df_out.columns
+    assert pd.api.types.is_datetime64_any_dtype(df_out["_datetime"])
+
+
+def test_detectar_var_tiempo_ninguna():
+    """Sin columnas temporales → devuelve None."""
+    from app.core.fuzzy.heuristic import _detectar_var_tiempo
+
+    df = pd.DataFrame({
+        "sensor_id": [1, 2, 3],
+        "value": [10, 20, 30],
+    })
+
+    var_tiempo, df_out = _detectar_var_tiempo(df)
+
+    assert var_tiempo is None, f"Esperaba None, obtuvo {var_tiempo!r}"

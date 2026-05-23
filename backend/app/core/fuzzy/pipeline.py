@@ -22,12 +22,12 @@ from .blocks import (
     generar_quincenas,
 )
 from .config import FuzzyConfig
-from .heuristic import detectar_var_metrica
+from .heuristic import _detectar_var_tiempo, detectar_var_metrica
 
 
 def fuzzify(
     input_path: str,
-    var_tiempo: str = "fecha",
+    var_tiempo: Optional[str] = None,
     var_metrica_override: Optional[str] = None,
     config: Optional[FuzzyConfig] = None,
     output_path: Optional[str] = None,
@@ -37,7 +37,7 @@ def fuzzify(
 
     Args:
         input_path: ruta al CSV del sensor.
-        var_tiempo: nombre de la columna temporal.
+        var_tiempo: nombre de la columna temporal. Si es None, se detecta automáticamente.
         var_metrica_override: si se proporciona, omite la heurística automática.
         config: parámetros difusos; usa FuzzyConfig() por defecto.
         output_path: si se proporciona, guarda el CSV fuzzy en esta ruta.
@@ -51,6 +51,16 @@ def fuzzify(
 
     # ── Carga ─────────────────────────────────────────────────────────────────
     df_raw = pd.read_csv(input_path)
+
+    # ── Detección automática de VAR_TIEMPO ────────────────────────────────────
+    if var_tiempo is None:
+        var_tiempo, df_raw = _detectar_var_tiempo(df_raw)
+        if var_tiempo is None:
+            raise ValueError(
+                "No se detectó columna temporal automáticamente. "
+                "Especifica var_tiempo manualmente."
+            )
+
     df_raw[var_tiempo] = pd.to_datetime(df_raw[var_tiempo])
 
     # ── Granularidad (mediana de diffs temporales) ────────────────────────────
