@@ -14,6 +14,7 @@ from app.core.fuzzy.heuristic import _detectar_var_tiempo, detectar_var_metrica
 from app.core.fuzzy.pipeline import fuzzify
 from app.core.mining.miner import BeamSearchMiner
 from app.core.nlg.pipeline import generar_resumen
+from app.core.nlg.visualizations import generar_todas_visualizaciones
 from app.core.preprocessing.splitter import split_by_sensor
 from app.db.session import AsyncSessionLocal
 from app.models.job import Job
@@ -76,6 +77,23 @@ def _run_mining(
 def _run_nlg(rules_df: pd.DataFrame, sensor_id: str, metrica: str, modo: str = "tecnico") -> str:
     """Runs src03 and returns the Markdown report."""
     return generar_resumen(rules_df, sensor=sensor_id, metrica=metrica, modo=modo)
+
+
+def _run_visualizations(
+    fuzzy_csv_path: str,
+    rules_df: pd.DataFrame,
+    sensor_id: str,
+    metrica: str,
+    output_dir: str
+) -> list:
+    """Generates all 4 visualizations and returns the list of created files."""
+    return generar_todas_visualizaciones(
+        fuzzy_csv_path,
+        rules_df,
+        sensor_id,
+        metrica,
+        output_dir
+    )
 
 
 # ── Async DB helpers ──────────────────────────────────────────────────────
@@ -212,6 +230,12 @@ async def execute_pipeline(
                 rules_path = Path(work_dir) / f"{sensor_id}_{metrica}_reglas.csv"
                 await loop.run_in_executor(None, partial(fuzzy_df.to_csv, str(fuzzy_path), index=False))
                 await loop.run_in_executor(None, partial(rules_df.to_csv, str(rules_path), index=False))
+
+                # Generar visualizaciones
+                await loop.run_in_executor(
+                    None,
+                    partial(_run_visualizations, str(fuzzy_path), rules_df, sensor_id, metrica, work_dir)
+                )
 
                 results.append((sensor_id, metrica, rules_df, report_md))
 

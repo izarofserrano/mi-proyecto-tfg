@@ -96,9 +96,20 @@ const rulesPage      = computed(() => jobStore.rulesPage)
 const rulesPageSize  = computed(() => jobStore.rulesPageSize)
 const totalPages     = computed(() => Math.ceil(rulesTotal.value / rulesPageSize.value) || 1)
 
-const parsedHtml = computed(() =>
-  reportMd.value ? marked.parse(reportMd.value) : ''
-)
+const parsedHtml = computed(() => {
+  if (!reportMd.value) return ''
+
+  // Parse markdown to HTML
+  let html = marked.parse(reportMd.value)
+
+  // Replace image paths: data/FILENAME.png → /api/v1/pipeline/{jobId}/image/FILENAME.png
+  html = html.replace(
+    /src="data\/([^"]+\.png)"/g,
+    `src="/api/v1/pipeline/${jobId}/image/$1"`
+  )
+
+  return html
+})
 
 // Sorting
 const sortCol = ref('lift')
@@ -246,7 +257,7 @@ onMounted(async () => {
 .markdown-body :deep(hr) { border: none; border-top: 1.5px solid #e5e7eb; margin: 1.5rem 0; }
 .markdown-body :deep(em) { color: #6b7280; }
 .markdown-body :deep(strong) { color: #111827; }
-.markdown-body :deep(img) { display: none; } /* hide chart image refs */
+.markdown-body :deep(img) { max-width: 100%; height: auto; margin: 1rem 0; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
 
 /* Rules */
 .rules-panel { position: sticky; top: 1rem; max-height: calc(100vh - 120px); overflow-y: auto; }

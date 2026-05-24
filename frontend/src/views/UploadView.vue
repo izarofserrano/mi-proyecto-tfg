@@ -1,7 +1,7 @@
 <template>
   <div class="upload-page">
     <div class="card upload-card">
-      <h1>Análisis de tráfico difuso</h1>
+      <h1>¡Mejora tu compresión usando Fuzhify!</h1>
       <p class="subtitle">Sube un CSV de sensor para generar automáticamente el informe.</p>
 
       <!-- Drop zone -->

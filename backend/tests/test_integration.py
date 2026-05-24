@@ -183,3 +183,86 @@ async def test_api_key_disabled_when_empty(http_client: AsyncClient, monkeypatch
         files={"file": _csv_file()},
     )
     assert resp.status_code == 202
+
+
+# ── GET /{job_id}/image/{filename} ────────────────────────────────────────
+
+async def test_image_endpoint_returns_png(http_client: AsyncClient, tmp_path, monkeypatch):
+    """El endpoint de imágenes devuelve 200 con content-type image/png si el archivo existe."""
+    from app.core.config import settings
+
+    # Configurar upload_dir temporal
+    monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+
+    # Crear job
+    resp = await http_client.post(
+        "/api/v1/pipeline/run",
+        files={"file": _csv_file()},
+    )
+    assert resp.status_code == 202
+    job_id = resp.json()["job_id"]
+
+    # Crear directorio del job y archivo PNG de prueba
+    job_dir = tmp_path / job_id
+    job_dir.mkdir(exist_ok=True)
+    test_image = job_dir / "test_heatmap.png"
+    test_image.write_bytes(b"\x89PNG\r\n\x1a\n")  # PNG header mínimo
+
+    # Solicitar imagen
+    resp = await http_client.get(f"/api/v1/pipeline/{job_id}/image/test_heatmap.png")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "image/png"
+    assert resp.content == b"\x89PNG\r\n\x1a\n"
+
+
+async def test_image_endpoint_404_si_no_existe(http_client: AsyncClient, tmp_path, monkeypatch):
+    """El endpoint de imágenes devuelve 404 si el archivo no existe."""
+    from app.core.config import settings
+
+    # Configurar upload_dir temporal
+    monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+
+    # Crear job
+    resp = await http_client.post(
+        "/api/v1/pipeline/run",
+        files={"file": _csv_file()},
+    )
+    assert resp.status_code == 202
+    job_id = resp.json()["job_id"]
+
+    # Crear directorio del job (pero sin archivo)
+    job_dir = tmp_path / job_id
+    job_dir.mkdir(exist_ok=True)
+
+    # Solicitar imagen inexistente
+    resp = await http_client.get(f"/api/v1/pipeline/{job_id}/image/nonexistent.png")
+    assert resp.status_code == 404
+    assert "no encontrada" in resp.json()["detail"].lower()
+
+
+async def test_image_endpoint_rechaza_path_traversal(http_client: AsyncClient, tmp_path, monkeypatch):
+    """El endpoint de imágenes rechaza nombres de archivo con path traversal."""
+    from app.core.config import settings
+
+    # Configurar upload_dir temporal
+    monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+
+    # Crear job
+    resp = await http_client.post(
+        "/api/v1/pipeline/run",
+        files={"file": _csv_file()},
+    )
+    assert resp.status_code == 202
+    job_id = resp.json()["job_id"]
+
+    # Intentar path traversal con ..
+    # Nota: usamos %252E%252E para double-encode y que llegue literal ".."
+    resp = await http_client.get(f"/api/v1/pipeline/{job_id}/image/%252E%252E/secret.png")
+    assert resp.status_code == 400 or resp.status_code == 404  # 404 si FastAPI normaliza
+
+    # Intentar path traversal con backslash (Windows)
+    # El backslash no se normaliza en URLs, así que este test debería funcionar
+    filename_with_backslash = "subdir\\file.png"
+    resp = await http_client.get(f"/api/v1/pipeline/{job_id}/image/{filename_with_backslash}")
+    assert resp.status_code == 400
+    assert "inválido" in resp.json()["detail"].lower()

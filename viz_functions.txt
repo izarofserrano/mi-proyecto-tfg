@@ -1,0 +1,344 @@
+=== CELL 13 ===
+# ---------------------------------------------------------------------------
+# NUEVA CELDA — Visualizaciones de reglas para src03
+# Pegar después de la celda de definición de generar_resumen (celda 11)
+# ---------------------------------------------------------------------------
+# Requiere en imports (celda 2): matplotlib.pyplot as plt, numpy as np
+# ---------------------------------------------------------------------------
+
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import numpy as np
+
+
+# Paleta coherente con los colores del heatmap
+COLORES_CONSECUENTE = {
+    "v_OutlierBajo": "#4a0e8f",
+    "v_MuyBaja":     "#2166ac",
+    "v_Baja":        "#74add1",
+    "v_Media":       "#ffffbf",
+    "v_Alta":        "#fdae61",
+    "v_MuyAlta":     "#d73027",
+    "v_OutlierAlto": "#7f0000",
+}
+
+ETIQUETA_CONSECUENTE = {
+    "v_OutlierBajo": "Outlier bajo",
+    "v_MuyBaja":     "Muy baja",
+    "v_Baja":        "Baja",
+    "v_Media":       "Media",
+    "v_Alta":        "Alta",
+    "v_MuyAlta":     "Muy alta",
+    "v_OutlierAlto": "Outlier alto",
+}
+
+
+DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
+
+# ---------------------------------------------------------------------------
+# 2. Heatmap
+# ---------------------------------------------------------------------------
+def generar_heatmap(sensor, metrica, guardar=True):
+    """
+    Genera el mapa de calor hora × día de la semana para un sensor y métrica.
+    Muestra la categoría difusa dominante en cada franja horaria.
+    """
+    fichero_fuzzy = f"data/{NOMBRE_DATASET}_{METRICA}_fuzzy.csv"
+    df = pd.read_csv(fichero_fuzzy)
+
+    # ── Identificar columnas de categoría disponibles ────────────────────
+    # Orden semántico de menor a mayor (para resolver empates: gana la más alta)
+    orden = ["v_OutlierBajo", "v_MuyBaja", "v_Baja",
+             "v_Media", "v_Alta", "v_MuyAlta", "v_OutlierAlto"]
+    cols_v = [c for c in orden if c in df.columns
+              and not c.startswith("v_abs_")
+              and c != "v_Mediana"]
+
+    # ── Extraer hora y día de semana desde las columnas fuzzy ────────────
+    # Las columnas t_H00..t_H23 y t_Lun..t_Dom son binarias (0/1 en src01)
+    # Reconstruimos hora y día a partir de cuál columna tiene valor 1
+    horas_cols = [f"t_H{h:02d}" for h in range(24) if f"t_H{h:02d}" in df.columns]
+    dias_cols  = ["t_Lun","t_Mar","t_Mie","t_Jue","t_Vie","t_Sab","t_Dom"]
+    dias_cols  = [c for c in dias_cols if c in df.columns]
+
+    # --- ADDED CHECK FOR MISSING COLUMNS ---
+    if not horas_cols:
+        print(f"Advertencia: No se encontraron columnas de horas (t_Hxx) en el archivo fuzzy '{fichero_fuzzy}'. No se generará el heatmap horario.")
+        return None
+    if not dias_cols:
+        print(f"Advertencia: No se encontraron columnas de días de la semana (t_Lun..t_Dom) en el archivo fuzzy '{fichero_fuzzy}'. No se generará el heatmap diario.")
+        return None
+    # --- END ADDED CHECK ---
+
+    # Reconstruir columnas hora y dia_semana numéricas
+    df["_hora"] = (df[horas_cols]
+                   .idxmax(axis=1)
+                   .str.extract(r"t_H(\d+)")[0]
+                   .astype(int))
+    df["_dia"]  = (df[dias_cols]
+                   .idxmax(axis=1)
+                   .map({c: i for i, c in enumerate(dias_cols)}))
+
+    # ── Calcular pertenencia media por hora × día ────────────────────────
+    # Para cada celda del grid, media de pertenencia de cada categoría
+    grid_categoria = np.full((24, 7), "", dtype=object)
+    grid_intensidad = np.zeros((24, 7))  # para el alpha del color
+
+    for h in range(24):
+        for d in range(7):
+            mask = (df["_hora"] == h) & (df["_dia"] == d)
+            sub = df[mask]
+            if sub.empty:
+                grid_categoria[h, d] = "v_Media"
+                continue
+            medias = {c: sub[c].mean() for c in cols_v}
+            cat_dominante = max(medias, key=medias.get)
+            grid_categoria[h, d] = cat_dominante
+            grid_intensidad[h, d] = medias[cat_dominante]
+
+    # ── Construir array RGBA para imshow ─────────────────────────────────
+    import matplotlib.colors as mcolors
+    rgba_grid = np.zeros((24, 7, 4))
+    for h in range(24):
+        for d in range(7):
+            cat = grid_categoria[h, d]
+            color_hex = COLORES_CONSECUENTE.get(cat, "#cccccc")
+            r, g, b = mcolors.to_rgb(color_hex)
+            # Alpha proporcional a la pertenencia media (mínimo 0.55)
+            alpha = max(0.55, min(1.0, grid_intensidad[h, d] * 2))
+            rgba_grid[h, d] = [r, g, b, alpha]
+
+    # ── Plot ─────────────────────────────────────────────────────────────
+    nombre_metrica_str = metrica.replace("_", " ").capitalize()
+
+
+    fig, ax = plt.subplots(figsize=(9, 11))
+    ax.imshow(rgba_grid, aspect="auto", origin="upper",
+              extent=[-0.5, 6.5, 23.5, -0.5])
+
+    # Ejes
+    ax.set_xticks(range(7))
+    ax.set_xticklabels(DIAS_SEMANA, fontsize=11)
+    ax.set_yticks(range(24))
+    ax.set_yticklabels([f"{h:02d}h" for h in range(24)], fontsize=9)
+    ax.set_xlabel("Día de la semana", fontsize=11, labelpad=8)
+    ax.set_ylabel("Hora del día", fontsize=11, labelpad=8)
+    ax.set_title(
+        f"Categoría dominante — {NOMBRE_DATASET}\n{nombre_metrica_str}",
+        fontsize=13, fontweight="bold", pad=12
+    )
+
+    # Grid visual
+    ax.set_xticks(np.arange(-0.5, 7, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, 24, 1), minor=True)
+    ax.grid(which="minor", color="white", linewidth=0.6)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # Líneas separadoras de franjas horarias
+    for franja_inicio in [0, 7, 14, 21]:
+        ax.axhline(franja_inicio - 0.5, color="white", linewidth=1.8, alpha=0.7)
+
+    # Etiquetas de franja en el margen derecho
+    franjas = [(0, 6, "Madrugada"), (7, 13, "Mañana"),
+               (14, 20, "Tarde"),   (21, 23, "Noche")]
+    for ini, fin, nombre in franjas:
+        ax.annotate(nombre, xy=(7.05, (ini + fin) / 2),
+                    xycoords=("data", "data"),
+                    fontsize=8, color="#555555", va="center",
+                    annotation_clip=False)
+
+    # Leyenda
+    categorias_presentes = [c for c in orden if c in np.unique(grid_categoria)]
+    patches = [
+        mpatches.Patch(
+            color=COLORES_CONSECUENTE[c],
+            label=ETIQUETA_CONSECUENTE[c]
+        )
+        for c in categorias_presentes
+    ]
+    ax.legend(handles=patches, loc="lower center",
+              bbox_to_anchor=(0.5, -0.13),
+              ncol=len(patches), fontsize=9,
+              frameon=True, edgecolor="#cccccc")
+
+    plt.tight_layout()
+
+    if guardar:
+        ruta_img = f"data/{sensor}_{metrica}_heatmap.png"
+        plt.savefig(ruta_img, dpi=150, bbox_inches="tight")
+        print(f"Heatmap guardado en: {ruta_img}")
+
+    plt.show()
+    return fig
+
+
+
+
+# ---------------------------------------------------------------------------
+# 2. Gráfica de barras: top reglas ordenadas por lift
+# ---------------------------------------------------------------------------
+
+def grafica_barras_lift(df_reglas, sensor, metrica, top_n=20, guardar=True):
+    """
+    Barras horizontales con las top_n reglas ordenadas por lift descendente.
+    Cada barra se colorea según su consecuente.
+    """
+    nombre_metrica_str = f"{METRICA}"
+
+    top = df_reglas.nlargest(top_n, "lift").copy()
+    top = top.iloc[::-1]  # invertir para que el mayor lift quede arriba
+
+    etiquetas = [
+        f"{row['antecedente']}  →  {ETIQUETA_CONSECUENTE.get(row['consecuente'], row['consecuente'])}"
+        for _, row in top.iterrows()
+    ]
+    colores = [
+        COLORES_CONSECUENTE.get(row["consecuente"], "#888888")
+        for _, row in top.iterrows()
+    ]
+
+    fig, ax = plt.subplots(figsize=(11, max(5, len(top) * 0.45)))
+
+    bars = ax.barh(range(len(top)), top["lift"], color=colores,
+                   edgecolor="white", linewidth=0.5)
+
+    # Etiqueta del valor de lift al final de cada barra
+    for i, (bar, (_, row)) in enumerate(zip(bars, top.iterrows())):
+        ax.text(bar.get_width() + 0.05, i,
+                f"lift {row['lift']:.1f}  conf {int(row['confianza']*100)}%",
+                va="center", fontsize=8, color="#444444")
+
+    ax.set_yticks(range(len(top)))
+    ax.set_yticklabels(etiquetas, fontsize=8)
+    ax.set_xlabel("Lift", fontsize=10)
+    ax.set_title(
+        f"Top {len(top)} reglas por lift — {sensor} | {nombre_metrica_str}",
+        fontsize=11, fontweight="bold", pad=10
+    )
+    ax.axvline(1.0, color="#aaaaaa", linewidth=0.8, linestyle="--")
+    ax.set_xlim(0, top["lift"].max() * 1.25)
+    ax.grid(axis="x", alpha=0.3)
+
+    # Leyenda de consecuentes presentes
+    consecuentes_presentes = top["consecuente"].unique()
+    patches = [
+        plt.Rectangle((0, 0), 1, 1,
+                       color=COLORES_CONSECUENTE.get(c, "#888888"),
+                       label=ETIQUETA_CONSECUENTE.get(c, c))
+        for c in sorted(consecuentes_presentes,
+                        key=lambda x: list(ETIQUETA_CONSECUENTE.keys()).index(x)
+                        if x in ETIQUETA_CONSECUENTE else 99)
+    ]
+    ax.legend(handles=patches, loc="lower right", fontsize=8,
+              frameon=True, edgecolor="#cccccc", title="Categoría")
+
+    plt.tight_layout()
+
+    if guardar:
+        ruta = f"data/{sensor}_{metrica}_barras_lift.png"
+        plt.savefig(ruta, dpi=150, bbox_inches="tight")
+        print(f"Guardado: {ruta}")
+
+    plt.show()
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# 3. Tabla visual: resumen por consecuente
+# ---------------------------------------------------------------------------
+
+def grafica_tabla_consecuentes(df_reglas, sensor, metrica, guardar=True):
+    """
+    Tabla visual con una fila por consecuente:
+    nº de reglas | confianza media | lift medio | lift máximo
+    Coloreada por categoría.
+    """
+    nombre_metrica_str = f"{METRICA}"
+
+    ORDEN = ["v_OutlierBajo","v_MuyBaja","v_Baja",
+             "v_Media","v_Alta","v_MuyAlta","v_OutlierAlto"]
+
+    resumen = (df_reglas
+               .groupby("consecuente")
+               .agg(
+                   n_reglas   = ("lift", "count"),
+                   conf_media = ("confianza", "mean"),
+                   lift_medio = ("lift", "mean"),
+                   lift_max   = ("lift", "max"),
+               )
+               .round(2))
+
+    # Ordenar según escala semántica
+    resumen = resumen.reindex(
+        [c for c in ORDEN if c in resumen.index]
+    )
+
+    cols      = ["Categoría", "Nº reglas", "Conf. media", "Lift medio", "Lift máx."]
+    filas     = []
+    colores_f = []
+
+    for cat, row in resumen.iterrows():
+        filas.append([
+            ETIQUETA_CONSECUENTE.get(cat, cat),
+            int(row["n_reglas"]),
+            f"{row['conf_media']*100:.0f} %",
+            f"{row['lift_medio']:.2f}",
+            f"{row['lift_max']:.2f}",
+        ])
+        colores_f.append(COLORES_CONSECUENTE.get(cat, "#cccccc"))
+
+    fig, ax = plt.subplots(figsize=(9, 0.55 * len(filas) + 1.5))
+    ax.axis("off")
+
+    tabla = ax.table(
+        cellText  = filas,
+        colLabels = cols,
+        cellLoc   = "center",
+        loc       = "center",
+    )
+    tabla.auto_set_font_size(False)
+    tabla.set_fontsize(10)
+    tabla.scale(1, 1.6)
+
+    # Colorear cabecera
+    for j in range(len(cols)):
+        tabla[0, j].set_facecolor("#333333")
+        tabla[0, j].set_text_props(color="white", fontweight="bold")
+
+    # Colorear filas por consecuente
+    for i, color_hex in enumerate(colores_f):
+        r, g, b = mcolors.to_rgb(color_hex)
+        # Versión más clara para el fondo de la celda
+        fondo = (r * 0.35 + 0.65, g * 0.35 + 0.65, b * 0.35 + 0.65)
+        for j in range(len(cols)):
+            tabla[i + 1, j].set_facecolor(fondo)
+
+    ax.set_title(
+        f"Resumen por categoría — Sensor {sensor} | {nombre_metrica_str}",
+        fontsize=11, fontweight="bold", pad=12
+    )
+    plt.tight_layout()
+
+    if guardar:
+        ruta = f"data/{sensor}_{metrica}_tabla_consecuentes.png"
+        plt.savefig(ruta, dpi=150, bbox_inches="tight")
+        print(f"Guardado: {ruta}")
+
+    plt.show()
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Ejecución — llama a las 3 funciones con SENSOR y METRICA de la celda 2
+# ---------------------------------------------------------------------------
+
+print(f"Generando visualizaciones para Sensor {NOMBRE_DATASET} | {METRICA}...\n")
+generar_heatmap(NOMBRE_DATASET, METRICA, guardar=True)
+grafica_barras_lift(df_reglas, NOMBRE_DATASET, METRICA)
+grafica_tabla_consecuentes(df_reglas, NOMBRE_DATASET, METRICA)
+print("\nVisualizaciones completadas.")
+
+================================================================================
+

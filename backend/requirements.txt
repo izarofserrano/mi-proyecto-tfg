@@ -8,6 +8,7 @@ python-multipart
 pandas
 numpy
 holidays
+matplotlib
 pytest
 pytest-asyncio
 httpx

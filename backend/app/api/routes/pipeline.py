@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -225,6 +226,44 @@ async def get_global_report(
         global_report_md=resultado["informe_md"],
         n_sources=resultado["n_sources"],
         total_rules=resultado["total_rules"],
+    )
+
+
+# ── GET /{job_id}/image/{filename} ─────────────────────────────────────────
+
+@router.get("/{job_id}/image/{filename}")
+async def get_image(
+    job_id: uuid.UUID,
+    filename: str,
+    db: AsyncSession = Depends(get_db),
+) -> FileResponse:
+    """Devuelve una imagen PNG generada por el pipeline."""
+    # Validación de seguridad: prevenir path traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Nombre de archivo inválido."
+        )
+
+    # Verificar que el job existe
+    await _get_job_or_404(db, job_id)
+
+    # Construir ruta del archivo
+    upload_dir = Path(settings.upload_dir) / str(job_id)
+    image_path = upload_dir / filename
+
+    # Verificar que el archivo existe
+    if not image_path.exists() or not image_path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagen {filename} no encontrada."
+        )
+
+    # Devolver el archivo con el media type correcto
+    return FileResponse(
+        path=str(image_path),
+        media_type="image/png",
+        filename=filename
     )
 
 

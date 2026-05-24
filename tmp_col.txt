@@ -1,0 +1,30 @@
+ 1: # Resumen de comportamiento — Sensor 6823
+ 2: 
+ 3: **Métrica analizada:** Intensidad del tráfico  
+ 4: **Total de reglas analizadas:** 41
+ 5: 
+ 6: ## Visualizaciones
+ 7: 
+ 8: ### Mapa de calor hora × día de la semana
+ 9: ![Mapa de calor hora x día](data/6823_intensidad_heatmap.png)
+10: 
+11: ### Reglas por fuerza de asociación (lift)
+12: ![Barras lift](data/6823_intensidad_barras_lift.png)
+13: 
+14: ### Soporte vs Confianza
+15: ![Scatter soporte-confianza](data/6823_intensidad_scatter.png)
+16: 
+17: ### Resumen por categoría
+18: ![Tabla consecuentes](data/6823_intensidad_tabla_consecuentes.png)
+19: 
+20: ## Análisis por nivel de tráfico
+21: 
+22: ### Intensidad del tráfico excepcionalmente alta
+23: *2 reglas — confianza media: 56 %, lift medio: 8.9*
+24: 
+25: En el contexto de las 7 h, la intensidad del tráfico tiende a ser excepcionalmente alta, especialmente en los viernes (59 %) y días laborables (53 %). Este patrón se observa con una confianza media del 56 % y un lift máximo de 9.4.
+26: 
+27: ### Intensidad del tráfico muy alta
+28: *6 reglas — confianza media: 56 %, lift medio: 3.3*
+29: 
+30: La intensidad del tráfico tiende a ser muy alta en los siguientes contextos: las 7 h en días laborables (67 %), las 8 h en días laborables (53 %), las 9 h en días laborables (53 %) y las 7 h (52 %). Este patrón se observa con una confianza media del 56 % y un lift máximo de 4.0.
