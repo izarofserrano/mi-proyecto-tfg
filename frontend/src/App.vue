@@ -2,8 +2,8 @@
   <div id="layout">
     <header>
       <nav>
-        <RouterLink to="/" class="brand">Traffic Summary System</RouterLink>
-        <span class="tagline">Análisis difuso de tráfico urbano</span>
+        <RouterLink to="/" class="brand">Fuzhify</RouterLink>
+        <span class="tagline">Generación automática de resúmenes sobre series temporales</span>
       </nav>
     </header>
     <main>

@@ -1,6 +1,6 @@
-# Traffic Summary System — TFG
+# Fuzhify — Sistema de generación automática de resúmenes
 
-Sistema de generación automática de resúmenes de tráfico urbano basado en **lógica difusa** y **minería de reglas de asociación**. Convierte datos brutos de sensores de tráfico en informes en lenguaje natural.
+Basado en **lógica difusa** y **minería de reglas de asociación**. Convierte series temporales en informes en lenguaje natural.
 
 ---
 
@@ -18,6 +18,7 @@ Sistema de generación automática de resúmenes de tráfico urbano basado en **
 8. [Configuración](#configuración)
 9. [Tests](#tests)
 10. [Ejemplos incluidos](#ejemplos-incluidos)
+11. [Casos de validación](#casos-de-validación)
 
 ---
 
@@ -432,6 +433,25 @@ En el directorio `ejemplos/` se incluyen ficheros de referencia del sensor `6823
 | `6823_ocupacion_resumen.md` | Informe final de ocupación |
 
 Para probar el sistema manualmente, sube `trafico_puntos_de_interes_2024_2025.csv` o cualquiera de los CSVs de sensor individual desde la interfaz web.
+
+---
+
+## Casos de validación
+
+El sistema ha sido validado en dos dominios distintos para comprobar su capacidad de generalización:
+
+### Tráfico urbano
+- **Dataset**: 6 sensores de Madrid (2024–2025)
+- **Métricas**: intensidad, ocupación
+- **Granularidad**: horaria
+- **Origen**: `trafico_puntos_de_interes_2024_2025.csv`
+
+### Transferencia de dominio: clima diario Delhi
+- **Dataset**: DailyDelhiClimate (temperatura, humedad, presión, velocidad del viento)
+- **Granularidad**: diaria
+- **Objetivo**: demostrar que el pipeline funciona con series temporales de cualquier dominio sin cambios en el código
+
+Ambos casos producen resúmenes legibles en español con reglas difusas interpretables.
 
 ---
 

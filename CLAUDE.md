@@ -1,12 +1,12 @@
 <!-- Claude Code lee este fichero automáticamente al iniciar -->
 <!-- Modelo recomendado: /model opusplan -->
 
-# CONTEXTO DEL PROYECTO — TFG Traffic Summary System
+# CONTEXTO DEL PROYECTO — TFG Fuzhify
 
 ## Qué es este proyecto
-Sistema de generación automática de resúmenes de tráfico urbano basado en
+Sistema de generación automática de resúmenes sobre series temporales basado en
 lógica difusa y minería de reglas de asociación. El pipeline convierte datos
-brutos de sensores de tráfico en informes en lenguaje natural.
+brutos en informes en lenguaje natural.
 
 ## Pipeline (orden de ejecución obligatorio)
 ```
