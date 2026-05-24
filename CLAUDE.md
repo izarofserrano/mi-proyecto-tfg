@@ -167,7 +167,7 @@ Estos umbrales son fijos y coherentes con los del selector de src02.
 
 
 ## Estado actual (actualizar al final de cada sesión)
-**Última sesión: 2026-05-23**
+**Última sesión: 2026-05-24**
 
 ### Completado ✓
 - **src00** — splitter.py: split_by_sensor(), detect_sensors(). Tests: 3/3.
@@ -179,33 +179,37 @@ Estos umbrales son fijos y coherentes con los del selector de src02.
   validación hora+franja, 3 filtros post-procesado. Tests: 4/4.
 - **src03** — nlg/: ETIQUETA_METRICA_COLOQUIAL + ETIQUETA_METRICA_TECNICA,
   verbalizar_antecedente(), generar_resumen(), modo coloquial/técnico.
-  Tests: 19/19.
-- **API REST** — 4 endpoints (POST /run, GET /status, GET /report,
-  GET /rules). Modelos SQLAlchemy async (Job, Rule).
+  Tests: 23/23 (19 base + 4 parametrizaciones).
+- **Visualizaciones** — core/nlg/visualizations.py: 4 gráficos automáticos
+  (heatmap hora×día, barras lift, scatter soporte-confianza, tabla consecuentes).
+  Integrado en services/pipeline.py, genera imágenes PNG tras NLG.
+- **API REST** — 5 endpoints (POST /run, GET /status, GET /report,
+  GET /rules, GET /image/{filename}). Endpoint de imágenes con validación
+  path traversal. Modelos SQLAlchemy async (Job, Rule).
 - **Frontend** — UploadView con selector de sorpresa (lift absoluto) y
-  selector de modo (coloquial/técnico). StatusView, ReportView.
+  selector de modo (coloquial/técnico). StatusView, ReportView con
+  renderizado automático de imágenes desde el endpoint del backend.
 - **Docker** — docker-compose.yml (postgres + backend + frontend).
-  nginx.conf con client_max_body_size 50M pendiente de fix.
 - **Auditoría** — 97 elementos auditados, 0 código muerto, 100%
   justificado por notebooks v4.
 
-### Tests totales: 54/54 ✓
+### Tests totales: 61/61 ✓
 | Suite | Tests |
 |---|---|
 | test_preprocessing.py | 3 |
 | test_fuzzy.py | 9 |
 | test_mining.py | 4 |
-| test_nlg.py | 19 |
-| test_integration.py | 15 |
-| test_global_report.py | 0 (pendiente src04) |
+| test_nlg.py | 23 |
+| test_integration.py | 18 (+3 endpoint imágenes) |
+| test_global_report.py | 4 |
 
 ### Pendiente
 - src04: informe global cross-sensor (implementar mañana, ver sección arriba)
 - Renombrar proyecto a Fuzhify (después de src04)
-- nginx.conf: arreglar client_max_body_size (caracteres BOM/CRLF)
 - README: actualizar al final cuando todo esté completo
 - Memoria del TFG: empezar tras cerrar src04
 
 ### Bloqueantes
 - Ninguno. El stack arranca con docker compose up.
   Frontend en http://localhost, API en http://localhost:8000/docs.
+  Las visualizaciones se generan automáticamente en cada ejecución del pipeline.
