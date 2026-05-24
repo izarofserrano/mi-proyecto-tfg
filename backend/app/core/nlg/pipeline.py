@@ -217,8 +217,8 @@ def generar_resumen(
         if c not in consecuentes_ordenados:
             consecuentes_ordenados.append(c)
 
-    # Análisis por nivel de tráfico
-    lineas.append("## Análisis por nivel de tráfico")
+    # Análisis por nivel de métrica
+    lineas.append(f"## Análisis por nivel de {nombre_metrica}")
     lineas.append("")
 
     for consecuente in consecuentes_ordenados:

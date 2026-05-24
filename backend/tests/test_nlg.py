@@ -122,7 +122,7 @@ def test_generar_resumen_produce_markdown_valido():
     md = generar_resumen(df, sensor="6823", metrica="ocupacion")
 
     assert md.startswith("# Resumen de comportamiento"), "Falta cabecera H1"
-    assert "## Análisis por nivel de tráfico" in md
+    assert "## Análisis por nivel de ocupación" in md
     assert "## Estadísticas globales" in md
     assert "| Reglas totales |" in md
     assert "condiciones no especificadas" not in md, (
