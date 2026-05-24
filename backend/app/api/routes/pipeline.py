@@ -61,7 +61,7 @@ async def run_pipeline(
         status="pending",
         progress=0,
         step="En cola",
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.utcnow(),
     )
     db.add(job)
     await db.commit()
