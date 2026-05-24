@@ -210,8 +210,8 @@ async def execute_pipeline(
                 # Guardar CSVs en disco para src04 (informe global)
                 fuzzy_path = Path(work_dir) / f"{sensor_id}_{metrica}_fuzzy.csv"
                 rules_path = Path(work_dir) / f"{sensor_id}_{metrica}_reglas.csv"
-                await loop.run_in_executor(None, fuzzy_df.to_csv, str(fuzzy_path), False)
-                await loop.run_in_executor(None, rules_df.to_csv, str(rules_path), False)
+                await loop.run_in_executor(None, partial(fuzzy_df.to_csv, str(fuzzy_path), index=False))
+                await loop.run_in_executor(None, partial(rules_df.to_csv, str(rules_path), index=False))
 
                 results.append((sensor_id, metrica, rules_df, report_md))
 
